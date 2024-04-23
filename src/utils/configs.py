@@ -16,14 +16,22 @@ def get_config():
 
 
 def update_config(config):
-    with open(config_path, 'w') as config_file:
-        config_file.write(json.dumps(config, indent=2))
+    try:
+        with open(config_path, 'w') as config_file:
+            config_file.write(json.dumps(config, indent=2))
+        logger.info(f"Updated configuration file: {config_path}")
+    except IOError as e:
+        logger.exception(f"Error updating configuration file: {str(e)}")
 
 
 def add_worker(index):
-    config = get_config()
-    config['workers'] = list(set(config['workers'] + [index]))
-    update_config(config)
+    try:
+        config = get_config()
+        config['workers'] = list(set(config['workers'] + [index]))
+        update_config(config)
+        logger.info(f"Added worker {index} to the configuration")
+    except Exception as e:
+        logger.exception(f"Error adding worker {index} to the configuration: {str(e)}")
 
 
 def get_workers_config():

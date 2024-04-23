@@ -14,13 +14,17 @@ class Worker:
         self.index = index
 
     def start(self):
-        process = subprocess.Popen(  # noqa S603
-            ['nohup', 'python', 'worker.py', str(self.index)],
-            stdout=open(os.path.join(logs_dir, 'worker-{0}.log'.format(self.index)), 'a'),
-            stderr=open(os.path.join(logs_dir, 'worker-{0}-err.log'.format(self.index)), 'a'),
-            preexec_fn=os.setpgrp,
-        )
-        self.pid = process.pid
+        try:
+            process = subprocess.Popen(  # noqa S603
+                ['nohup', 'python', 'worker.py', str(self.index)],
+                stdout=open(os.path.join(logs_dir, f'worker-{self.index}.log'), 'a'),
+                stderr=open(os.path.join(logs_dir, f'worker-{self.index}-err.log'), 'a'),
+                preexec_fn=os.setpgrp,
+            )
+            self.pid = process.pid
+            logger.info(f"Started worker {self.index} with PID: {self.pid}")
+        except Exception as e:
+            logger.exception(f"Error starting worker {self.index}: {str(e)}")
 
     @property
     def pid_file_path(self):
@@ -51,14 +55,19 @@ class Worker:
 
     @staticmethod
     def spawn():
-        workers = get_workers_config()
+        try:
+            workers = get_workers_config()
 
-        if workers:
-            worker_index = max(workers) + 1
-        else:
-            worker_index = 1
+            if workers:
+                worker_index = max(workers) + 1
+            else:
+                worker_index = 1
 
-        add_worker(worker_index)
+            logger.info(f"Spawning new worker with index: {worker_index}")
+            add_worker(worker_index)
 
-        worker = Worker(worker_index)
-        worker.start()
+            worker = Worker(worker_index)
+            worker.start()
+            logger.info(f"Worker {worker_index} spawned successfully")
+        except Exception as e:
+            logger.exception(f"Error spawning worker: {str(e)}")
